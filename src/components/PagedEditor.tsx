@@ -86,8 +86,7 @@ export function PagedEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable default history if needed
-        history: {
+        undoRedo: {
           depth: 100,
         },
       }),

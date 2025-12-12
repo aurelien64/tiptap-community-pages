@@ -2,6 +2,12 @@
 
 A community-built pagination extension for [Tiptap](https://tiptap.dev/) that provides WYSIWYG page layout similar to word processors, with support for legal document formats.
 
+## Compatibility
+
+- Requires **Tiptap v3.x** (`@tiptap/core`, `@tiptap/pm`, `@tiptap/react`)
+- Tested against **Tiptap v3.13.x** in this repository
+- React 19 is used in the demo, but the library is shipped as a normal package with React as a peer dependency.
+
 ## Features
 
 - **📄 Multiple Page Formats**: Support for A4, US Letter, and US Legal paper sizes

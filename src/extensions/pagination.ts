@@ -70,6 +70,10 @@ declare module '@tiptap/core' {
       goToPage: (pageNumber: number) => ReturnType
     }
   }
+
+  interface Storage {
+    pagination: PaginationStorage
+  }
 }
 
 export const paginationPluginKey = new PluginKey('pagination')
@@ -197,7 +201,7 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       // We do this by adding a computed filler `margin-bottom` on the hard break node.
       // The page count calculation below uses a fixed-point iteration so the overlay
       // contribution stays consistent and does not explode.
-      applyHardPageBreakSpacing(editorDom, layout, pageGap)
+      const minPageCountFromHardBreaks = applyHardPageBreakSpacing(editorDom, layout, pageGap)
       
       // Calculate content height by measuring visual span from first to last content element
       // This properly accounts for CSS margins between elements
@@ -222,7 +226,7 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
         const lastBottom = lastContent.getBoundingClientRect().bottom - editorRect.top
         
         // Visual span from first content to last content
-        const visualSpan = lastBottom - firstTop
+        const visualSpan = Math.max(0, Math.round(lastBottom - firstTop))
         
         // Get current page count to calculate page break contributions
         // Page breaks are floated and push content down.
@@ -239,7 +243,7 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
         }
 
         const finalContribution = Math.max(0, estimate - 1) * breakerHeight
-        totalContentHeight = Math.max(0, visualSpan - finalContribution)
+        totalContentHeight = Math.max(0, Math.round(visualSpan - finalContribution))
       }
       
       // Safety: ensure we have at least some content
@@ -248,7 +252,10 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       }
       
       // Calculate number of pages based on content
-      const pageCount = Math.max(1, Math.ceil(totalContentHeight / contentHeight))
+      // NOTE: Hard page breaks can require additional pages even if the current
+      // float-based overlays haven't rendered the last break yet.
+      let pageCount = Math.max(1, Math.ceil(totalContentHeight / contentHeight))
+      pageCount = Math.max(pageCount, minPageCountFromHardBreaks)
       
       // Check if page count or config actually changed - if not, skip updates
       const configKey = `${config.format}-${config.orientation}`
@@ -277,10 +284,10 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       // Set min-height on editor to ensure proper page dimensions
       // Formula: pageCount * contentHeight + (pageCount - 1) * pageGap + margins.top + margins.bottom
       // But since we use float-based positioning, we need enough height for all page breaks
-      const minHeight = pageCount * contentHeight + 
-                       (pageCount - 1) * pageGap + 
-                       layout.margins.top + layout.margins.bottom
-      editorDom.style.minHeight = minHeight + 'px'
+      const minHeight = pageCount * contentHeight +
+               (pageCount - 1) * pageGap +
+               layout.margins.top + layout.margins.bottom
+      editorDom.style.minHeight = Math.ceil(minHeight) + 'px'
       
       // Done updating
       isUpdating = false
@@ -413,41 +420,81 @@ function applyHardPageBreakSpacing(
     editorDom.querySelectorAll<HTMLElement>('[data-page-break], [data-page-break="true"]')
   )
 
-  if (breaks.length === 0) return
+  if (breaks.length === 0) return 1
 
   const editorRect = editorDom.getBoundingClientRect()
   const interPage = layout.margins.bottom + pageGap + layout.margins.top
   const stride = layout.content.height + interPage
+  const contentHeight = layout.content.height
 
-  // Reset first so we recompute from current layout.
-  for (const el of breaks) {
-    el.style.marginBottom = '0px'
-    el.style.clear = ''
-  }
+  // Two-pass, stable computation:
+  // - Measure using current layout
+  // - Compute desired margins in DOM order while compensating for how earlier
+  //   margin changes will shift later nodes.
+  // - Apply after computing, with rounding to avoid sub-pixel oscillation.
+  const currentMargins = breaks.map(el => {
+    const v = parseFloat(el.style.marginBottom || '0')
+    return Number.isFinite(v) ? v : 0
+  })
 
-  let virtualAdded = 0
+  const desiredMargins: number[] = new Array(breaks.length).fill(0)
 
-  for (const el of breaks) {
-    const visualY = el.getBoundingClientRect().top - editorRect.top
+  // Hard breaks can force additional pages even if the last visual break overlay
+  // is not currently present. Track a minimum required page count.
+  let minRequiredPageCount = 1
+  let cumulativeDeltaShift = 0
+
+  for (let i = 0; i < breaks.length; i++) {
+    const el = breaks[i]
+
+    const visualY = (el.getBoundingClientRect().top - editorRect.top) + cumulativeDeltaShift
     const yFromFirstContentTop = Math.max(0, visualY - layout.margins.top)
 
     const visualPageIndex = stride > 0 ? Math.floor(yFromFirstContentTop / stride) : 0
-    const contentOnlyY = yFromFirstContentTop - visualPageIndex * interPage
+    const withinStride = yFromFirstContentTop - visualPageIndex * stride
+    // Convert from visual coordinates (content + overlay per page) into a
+    // content-only coordinate system by clamping the within-stride position.
+    // This prevents overlay height (footer/gap/header) from polluting the
+    // modulo math and causing incorrect remaining-space calculations.
+    const contentOnlyY = (visualPageIndex * contentHeight) + Math.min(withinStride, contentHeight)
 
-    const adjustedContentY = contentOnlyY + virtualAdded
-    const withinPage = layout.content.height > 0
-      ? (adjustedContentY % layout.content.height)
-      : 0
+    const adjustedContentY = contentOnlyY
+    const withinPage = contentHeight > 0 ? (adjustedContentY % contentHeight) : 0
 
+    // If we're exactly at a page boundary (withinPage === 0), a hard page break
+    // should still advance one full page (creating a blank page if needed).
     const remaining = withinPage === 0
-      ? 0
-      : Math.max(0, layout.content.height - withinPage)
+      ? contentHeight
+      : Math.max(0, contentHeight - withinPage)
 
-    if (remaining > 0) {
-      el.style.marginBottom = `${remaining}px`
-      virtualAdded += remaining
+    // Ceil to a whole pixel so we don't keep chasing fractional layout shifts.
+    const desired = remaining > 0 ? Math.ceil(remaining) : 0
+    desiredMargins[i] = desired
+
+    if (contentHeight > 0) {
+      // Page number (1-indexed) of the position after the hard break spacing.
+      const afterBreakY = adjustedContentY + desired
+      const requiredPages = Math.floor(afterBreakY / contentHeight) + 1
+      if (requiredPages > minRequiredPageCount) minRequiredPageCount = requiredPages
+    }
+
+    // Account for how changing THIS element's margin will shift everything after it.
+    const delta = desired - currentMargins[i]
+    cumulativeDeltaShift += delta
+  }
+
+  for (let i = 0; i < breaks.length; i++) {
+    const el = breaks[i]
+    const desired = desiredMargins[i]
+    const current = currentMargins[i]
+
+    // Only write styles if we actually change the value.
+    if (Math.abs(desired - current) >= 1) {
+      el.style.marginBottom = desired > 0 ? `${desired}px` : '0px'
     }
   }
+
+  return minRequiredPageCount
 }
 
 /**

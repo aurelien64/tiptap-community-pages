@@ -165,7 +165,7 @@ export default function HomePage() {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        history: {
+        undoRedo: {
           depth: 100,
         },
       }),

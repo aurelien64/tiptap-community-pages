@@ -298,6 +298,62 @@ describe('Pagination Extension', () => {
       )
       expect(pageBreaks?.length).toBe(2)
     })
+
+    it('should force additional pages for multiple hard breaks', () => {
+      // In jsdom, element measurements are often 0.
+      // Make this deterministic by mocking getBoundingClientRect for breaks.
+      vi.useFakeTimers()
+
+      editor.commands.setPageBreak()
+      editor.commands.setPageBreak()
+      editor.commands.setPageBreak()
+
+      const breakEls = Array.from(editor.view.dom.querySelectorAll('[data-page-break]')) as HTMLElement[]
+      expect(breakEls.length).toBe(3)
+
+      const layout = getPageLayoutDimensions(editor.storage.pagination.pageConfig)
+      const stride = layout.content.height + layout.margins.bottom + 40 + layout.margins.top
+      const tops = [
+        layout.margins.top,
+        layout.margins.top + 200,
+        layout.margins.top + stride,
+      ]
+
+      ;(editor.view.dom as unknown as HTMLElement).getBoundingClientRect = () => ({
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as unknown as DOMRect
+
+      breakEls.forEach((el, i) => {
+        el.getBoundingClientRect = () => ({
+          top: tops[i] ?? 0,
+          bottom: tops[i] ?? 0,
+          left: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: tops[i] ?? 0,
+          toJSON: () => ({}),
+        }) as unknown as DOMRect
+      })
+
+      vi.runAllTimers()
+      vi.useRealTimers()
+
+      // First break at a page boundary should advance a full page.
+      expect(breakEls[0]?.style.marginBottom).toBe(`${layout.content.height}px`)
+
+      // pageCount should be clamped by hard-break requirements.
+      expect(editor.storage.pagination.pageCount).toBeGreaterThanOrEqual(3)
+    })
   })
 })
 
