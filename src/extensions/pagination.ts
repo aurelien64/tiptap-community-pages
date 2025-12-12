@@ -433,7 +433,9 @@ function applyHardPageBreakSpacing(
   scale: number
 ) {
   const breaks = Array.from(
-    editorDom.querySelectorAll<HTMLElement>('[data-page-break], [data-page-break="true"]')
+    editorDom.querySelectorAll<HTMLElement>(
+      '[data-page-break], [data-page-break="true"], .page-break'
+    )
   )
 
   if (breaks.length === 0) return 1

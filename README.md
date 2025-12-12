@@ -106,6 +106,10 @@ editor.commands.setPageBreak()
 editor.commands.goToPage(2)
 ```
 
+Hard page breaks are rendered as a block element with a stable marker for exports/imports:
+- `data-page-break="true"`
+- `.page-break` class (always included)
+
 ### Page Format Dimensions
 
 | Format | Width | Height | Common Use |

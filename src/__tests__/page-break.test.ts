@@ -71,6 +71,25 @@ describe('PageBreak Extension', () => {
       expect(html).toContain('class="page-break"')
     })
 
+    it('should always include canonical page-break class even when configured', () => {
+      const editor2 = new Editor({
+        extensions: [StarterKit, PageBreak.configure({
+          HTMLAttributes: {
+            class: 'custom-break',
+          },
+        })],
+        content: '<p>Test content</p>',
+      })
+
+      editor2.commands.setPageBreak()
+      const html = editor2.getHTML()
+      expect(html).toContain('data-page-break="true"')
+      expect(html).toContain('custom-break')
+      expect(html).toContain('page-break')
+
+      editor2.destroy()
+    })
+
     it('should insert page break with label', () => {
       editor.commands.setPageBreak()
       

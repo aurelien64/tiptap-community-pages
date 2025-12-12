@@ -68,12 +68,22 @@ export const PageBreak = Node.create<PageBreakOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
+    const attrs = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+      'data-page-break': 'true',
+      'contenteditable': 'false',
+    }) as Record<string, unknown>
+
+    // Guarantee a stable marker for exports/imports.
+    // Consumers can add classes via configure(), but they should not be able
+    // to remove the canonical `.page-break` marker.
+    const existingClass = typeof attrs.class === 'string' ? attrs.class : ''
+    const classSet = new Set(existingClass.split(/\s+/).filter(Boolean))
+    classSet.add('page-break')
+    attrs.class = Array.from(classSet).join(' ')
+
     return [
       'div',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        'data-page-break': 'true',
-        'contenteditable': 'false',
-      }),
+      attrs,
       [
         'div',
         { class: 'page-break-content' },
