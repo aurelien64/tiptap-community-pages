@@ -1,0 +1,389 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   Community Tiptap Pages - Global Styles
+   ======================================== */
+
+:root {
+  --page-bg: #f3f4f6;
+  --page-shadow: 0 6px 10px rgba(0, 0, 0, 0.12);
+  --page-gap-bg: #e5e7eb;
+}
+
+/* ========================================
+   Base Editor Styles
+   ======================================== */
+
+.paged-editor-content {
+  outline: none;
+  min-height: 100%;
+  position: relative;
+  /* White background for content area with side shadows */
+  background: white;
+}
+
+.paged-editor-content:focus {
+  outline: none;
+}
+
+/* ========================================
+   Page Content Area Minimum Heights
+   These ensure each page fills to the correct paper size
+   ======================================== */
+
+/* Default min-height for Letter format content area (864px = 1056 - 96 - 96) */
+.page-wrapper-page[data-page-format="Letter"] .paged-editor-content {
+  min-height: 864px;
+}
+
+/* Legal format content area (1152px = 1344 - 96 - 96) */
+.page-wrapper-page[data-page-format="Legal"] .paged-editor-content {
+  min-height: 1152px;
+}
+
+/* A4 format content area (931px = 1123 - 96 - 96) */
+.page-wrapper-page[data-page-format="A4"] .paged-editor-content {
+  min-height: 931px;
+}
+
+/* Placeholder */
+.paged-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ========================================
+   Page Break Node Styles
+   ======================================== */
+
+.page-break {
+  display: block;
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border: none;
+  position: relative;
+  page-break-after: always;
+  break-after: page;
+}
+
+.page-break::before {
+  content: 'Page Break';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  line-height: 1;
+  color: #6b7280;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.page-break::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  transform: translateY(-50%);
+  border-top: 1px dashed #d1d5db;
+}
+
+.page-break-content {
+  display: none;
+}
+
+.page-break-label {
+  display: none;
+}
+
+/* Selected state */
+.page-break.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   Pagination Break Overlay Styles
+   ======================================== */
+
+.pagination-break-overlay {
+  pointer-events: none;
+  user-select: none;
+}
+
+.pagination-page-shadow {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ========================================
+   Page Wrapper Styles
+   ======================================== */
+
+.page-wrapper-container {
+  background-color: var(--page-bg);
+}
+
+.page-wrapper-page {
+  background: white;
+  box-shadow: var(--page-shadow);
+  box-sizing: border-box;
+  transition: width 0.3s ease;
+}
+
+/* Visual page separation - overlay container */
+.pagination-overlay-container {
+  pointer-events: none;
+}
+
+/* Pagination break overlay (gap between pages) */
+.pagination-break-overlay {
+  box-sizing: border-box;
+}
+
+/* ========================================
+   Typography - Prose styles for editor
+   ======================================== */
+
+.prose {
+  color: #111827;
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.prose p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+.prose h1 {
+  font-size: 2.25em;
+  margin-top: 0;
+  margin-bottom: 0.8888889em;
+  line-height: 1.1111111;
+  font-weight: 700;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  line-height: 1.3333333;
+  font-weight: 600;
+}
+
+.prose h3 {
+  font-size: 1.25em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.prose h4 {
+  font-size: 1em;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose li {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose blockquote {
+  font-style: italic;
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  margin: 1.6em 0;
+  color: #6b7280;
+}
+
+.prose pre {
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 1em;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin: 1.6em 0;
+}
+
+.prose code {
+  font-size: 0.875em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2em 0;
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+  /* Hide UI elements */
+  .toolbar,
+  .fixed,
+  header,
+  nav,
+  [role="navigation"] {
+    display: none !important;
+  }
+
+  /* Keep the wrapper, but remove screen styling */
+  .page-wrapper-container {
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+
+  /* Reset page wrapper */
+  .page-wrapper-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+
+  /* Hide visual page break indicators */
+  .pagination-break-overlay {
+    display: none !important;
+  }
+
+  /* Enforce page breaks */
+  .page-break {
+    height: 0 !important;
+    margin: 0 !important;
+    visibility: hidden;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .page-break::before {
+    display: none !important;
+  }
+
+  .page-break-content,
+  .page-break-label {
+    display: none !important;
+  }
+
+  /* Page settings */
+  @page {
+    margin: 1in;
+  }
+
+  /* US Letter */
+  .page-wrapper-page[data-page-format="Letter"] {
+    @page {
+      size: letter;
+    }
+  }
+
+  /* US Legal */
+  .page-wrapper-page[data-page-format="Legal"] {
+    @page {
+      size: legal;
+    }
+  }
+
+  /* A4 */
+  .page-wrapper-page[data-page-format="A4"] {
+    @page {
+      size: A4;
+    }
+  }
+
+  /* Widow/orphan control */
+  p, h1, h2, h3, h4, h5, h6 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Prevent breaks inside elements */
+  pre, blockquote, ul, ol, table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* ========================================
+   Toolbar Styles
+   ======================================== */
+
+.toolbar select {
+  padding: 0.375rem 2rem 0.375rem 0.75rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.toolbar button:active {
+  transform: translateY(1px);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
