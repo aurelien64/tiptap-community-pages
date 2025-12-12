@@ -564,12 +564,12 @@ function createPaginationContainer(
     
     // The .breaker div - contains footer, gap, header
     // Uses negative margin-left to extend to full page width (counteract padding)
-    breaksHtml += '<div class="' + BREAKER_CONTAINER_CLASS + '" style="width:calc(' + page.width + 'px);margin-left:-' + margins.left + 'px;position:relative;float:left;clear:both;left:0;right:0;z-index:2;">'
+    breaksHtml += '<div class="' + BREAKER_CONTAINER_CLASS + '" style="width:calc(' + page.width + 'px);margin-left:-' + margins.left + 'px;position:relative;float:left;clear:both;left:0;right:0;z-index:2;box-sizing:border-box;">'
     
     // Footer
     // Draw the bottom separator line here so it stays within page width,
     // even if the gap extends wider to mask side shadows.
-    breaksHtml += '<div class="' + PAGE_FOOTER_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 -1px 0 #e5e7eb;">'
+    breaksHtml += '<div class="' + PAGE_FOOTER_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 -1px 0 #e5e7eb;box-sizing:border-box;">'
     breaksHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;height:100%;">'
     breaksHtml += '<div style="text-align:left;"></div>'
     breaksHtml += '<div style="text-align:center;"></div>'
@@ -580,11 +580,11 @@ function createPaginationContainer(
     // - stays wider than the page to hide the continuous side shadow
     // - has NO borders (borders would visibly extend past page edges)
     // - uses a subtle vertical gradient to blend with page shadows
-    breaksHtml += '<div class="' + PAGE_GAP_CLASS + '" style="height:' + pageGap + 'px;position:relative;width:calc(100% + 14px)!important;left:-7px;background-color:var(--page-bg,#f3f4f6);background-image:linear-gradient(to bottom, rgba(0,0,0,0.035), rgba(0,0,0,0.00) 45%, rgba(0,0,0,0.00) 55%, rgba(0,0,0,0.035));"></div>'
+    breaksHtml += '<div class="' + PAGE_GAP_CLASS + '" style="height:' + pageGap + 'px;position:relative;width:calc(100% + 14px)!important;left:-7px;background-color:var(--page-bg,#f3f4f6);background-image:linear-gradient(to bottom, rgba(0,0,0,0.035), rgba(0,0,0,0.00) 45%, rgba(0,0,0,0.00) 55%, rgba(0,0,0,0.035));box-sizing:border-box;"></div>'
     
     // Header
     // Draw the top separator line here so it stays within page width.
-    breaksHtml += '<div class="' + PAGE_HEADER_CLASS + '" style="height:' + margins.top + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 1px 0 #e5e7eb;">'
+    breaksHtml += '<div class="' + PAGE_HEADER_CLASS + '" style="height:' + margins.top + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 1px 0 #e5e7eb;box-sizing:border-box;">'
     breaksHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;height:100%;">'
     breaksHtml += '<div style="text-align:left;"></div>'
     breaksHtml += '<div style="text-align:center;"></div>'
@@ -655,7 +655,7 @@ function createLastPageFooter(
   }
   
   // Footer with page number
-  html += '<div class="' + LAST_PAGE_FOOTER_CONTENT_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;display:flex;align-items:center;">'
+  html += '<div class="' + LAST_PAGE_FOOTER_CONTENT_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;display:flex;align-items:center;box-sizing:border-box;">'
   html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;">'
   html += '<div style="text-align:left;"></div>'
   html += '<div style="text-align:center;"></div>'
@@ -683,6 +683,12 @@ function injectPaginationStyles() {
     }
     /* Keep gap sizing stable if it ever gains borders again. */
     .${PAGE_GAP_CLASS} {
+      box-sizing: border-box;
+    }
+    .${BREAKER_CONTAINER_CLASS},
+    .${PAGE_HEADER_CLASS},
+    .${PAGE_FOOTER_CLASS},
+    .${LAST_PAGE_FOOTER_CONTENT_CLASS} {
       box-sizing: border-box;
     }
     .${FIRST_PAGE_HEADER_CLASS},
