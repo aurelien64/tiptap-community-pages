@@ -15,11 +15,21 @@ A community-built pagination extension for [Tiptap](https://tiptap.dev/) that pr
 ## Installation
 
 ```bash
+npm i tiptap-community-pages
+```
+
+### CSS (required for hard page breaks)
+
+Import once in your app (e.g. your Next.js `layout.tsx`, or app entry):
+
+```ts
+import 'tiptap-community-pages/styles.css'
+```
+
+### Local demo installation
+
+```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
 ## Development
@@ -47,8 +57,8 @@ npm run build
 import { useEditor } from '@tiptap/react'
 import { EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { PageBreak, Pagination } from '@/extensions'
-import { PageWrapper } from '@/components'
+import { PageBreak, Pagination } from 'tiptap-community-pages'
+import { PageWrapper } from 'tiptap-community-pages/react'
 
 const editor = useEditor({
   extensions: [

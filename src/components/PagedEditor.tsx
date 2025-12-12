@@ -4,7 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { PageWrapper } from './PageWrapper'
-import { PageBreak, Pagination, PageFormatName, PageOrientation, PageMargins } from '@/extensions'
+import { PageBreak, Pagination, PageFormatName, PageOrientation, PageMargins } from '../extensions'
 
 export interface PagedEditorProps {
   /**

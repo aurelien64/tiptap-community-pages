@@ -8,7 +8,7 @@ import {
   PageMargins,
   createPageConfig,
   getPageLayoutDimensions,
-} from '@/extensions/page-format'
+} from '../extensions/page-format'
 
 export interface PageWrapperProps {
   /**

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { PageFormatName, PageOrientation, PAGE_FORMATS } from '@/extensions'
+import { PageFormatName, PageOrientation, PAGE_FORMATS } from '../extensions'
 
 export interface ToolbarProps {
   format: PageFormatName
