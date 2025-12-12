@@ -24,10 +24,9 @@ A community-built pagination extension for [Tiptap](https://tiptap.dev/) that pr
 npm i tiptap-community-pages
 ```
 
-### CSS (required for hard page breaks)
+### CSS (required)
 
-Import once in your app (e.g. your Next.js `layout.tsx`, or app entry):
-
+Import once in your app (e.g. your Next.js `layout.tsx`, or app entry). This provides the default `PageWrapper` layout (including mobile fit-to-width scaling) and the hard page break marker styles:
 ```ts
 import 'tiptap-community-pages/styles.css'
 ```

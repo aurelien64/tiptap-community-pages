@@ -28,7 +28,7 @@ export function Toolbar({
   onPrint,
 }: ToolbarProps) {
   return (
-    <div className="toolbar bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4 sticky top-0 z-50">
+    <div className="toolbar bg-white border-b border-gray-200 px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2 sm:gap-4 sticky top-0 z-50">
       {/* Page Format Selector */}
       <div className="flex items-center gap-2">
         <label htmlFor="format-select" className="text-sm font-medium text-gray-700">
@@ -38,7 +38,7 @@ export function Toolbar({
           id="format-select"
           value={format}
           onChange={(e) => onFormatChange(e.target.value as PageFormatName)}
-          className="block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+          className="block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm max-w-[12rem] sm:max-w-none"
         >
           {Object.entries(PAGE_FORMATS).map(([key, value]) => (
             <option key={key} value={key}>
@@ -65,7 +65,7 @@ export function Toolbar({
       </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-gray-300" />
+      <div className="hidden sm:block w-px h-6 bg-gray-300" />
 
       {/* Page Break Button */}
       {onInsertPageBreak && (

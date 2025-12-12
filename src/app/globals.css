@@ -132,13 +132,46 @@
 
 .page-wrapper-container {
   background-color: var(--page-bg);
+  padding: 40px 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .page-wrapper-container {
+    padding: 16px 8px;
+  }
+}
+
+.page-wrapper-viewport {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.page-wrapper-scaled-outer {
+  position: relative;
+  width: var(--ctp-scaled-width, auto);
+  height: var(--ctp-scaled-height, auto);
 }
 
 .page-wrapper-page {
   background: white;
-  box-shadow: var(--page-shadow);
+  box-shadow: var(--ctp-page-shadow, var(--page-shadow));
   box-sizing: border-box;
-  transition: width 0.3s ease;
+  width: var(--ctp-page-width, auto);
+  padding-left: var(--ctp-margin-left, 0px);
+  padding-right: var(--ctp-margin-right, 0px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  transform: scale(var(--ctp-page-scale, 1));
+  overflow: visible;
 }
 
 /* Visual page separation - overlay container */

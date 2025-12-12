@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, CSSProperties } from 'react'
+import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   PageConfig,
   PageFormatName,
@@ -60,6 +60,22 @@ export interface PageWrapperProps {
    * Scale factor for the page (1 = 100%)
    */
   scale?: number
+
+  /**
+   * When true, the page scales down to fit narrower containers (mobile-friendly).
+   * Does not scale above the provided `scale`.
+   */
+  responsive?: boolean
+
+  /**
+   * Minimum auto scale when responsive (prevents extreme shrink).
+   */
+  minScale?: number
+
+  /**
+   * Optional test id for E2E/smoke tests
+   */
+  testId?: string
 }
 
 /**
@@ -86,7 +102,17 @@ export function PageWrapper({
   pageClassName = '',
   pageStyle = {},
   scale = 1,
+  responsive = true,
+  minScale = 0.25,
+  testId,
 }: PageWrapperProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const scaledOuterRef = useRef<HTMLDivElement | null>(null)
+  const pageRef = useRef<HTMLDivElement | null>(null)
+  const [fitScale, setFitScale] = useState(1)
+  const [unscaledHeight, setUnscaledHeight] = useState(0)
+
   const config: PageConfig = useMemo(() => {
     return createPageConfig(format, orientation, margins)
   }, [format, orientation, margins])
@@ -95,53 +121,110 @@ export function PageWrapper({
     return getPageLayoutDimensions(config)
   }, [config])
 
-  const containerStyles: CSSProperties = {
-    backgroundColor: containerBackground,
-    padding: '40px 20px',
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    overflow: 'auto',
-    // CSS variable for page background (used by overlays)
-    ['--page-bg' as string]: containerBackground,
-  }
+  const effectiveScale = useMemo(() => {
+    if (!responsive) return scale
+    const capped = Math.min(scale, fitScale)
+    return Math.max(minScale, Math.min(1, capped))
+  }, [responsive, scale, fitScale, minScale])
+
+  // Push dynamic values into CSS variables / element styles (no JSX inline styles).
+  useEffect(() => {
+    const containerEl = containerRef.current
+    const pageEl = pageRef.current
+    const scaledOuterEl = scaledOuterRef.current
+    if (!containerEl || !pageEl || !scaledOuterEl) return
+
+    containerEl.style.setProperty('--page-bg', containerBackground)
+    pageEl.style.setProperty('--ctp-page-scale', String(effectiveScale))
+    pageEl.style.setProperty('--ctp-page-width', `${layout.page.width}px`)
+    pageEl.style.setProperty('--ctp-margin-left', `${layout.margins.left}px`)
+    pageEl.style.setProperty('--ctp-margin-right', `${layout.margins.right}px`)
+
+    const shadow = showShadow ? '0 10px 10px rgba(0, 0, 0, 0.12)' : 'none'
+    pageEl.style.setProperty('--ctp-page-shadow', shadow)
+
+    const scaledWidth = Math.ceil(layout.page.width * effectiveScale)
+    const baseHeight = Math.max(unscaledHeight || layout.page.height, 1)
+    const scaledHeight = Math.ceil(baseHeight * effectiveScale)
+    scaledOuterEl.style.setProperty('--ctp-scaled-width', `${scaledWidth}px`)
+    scaledOuterEl.style.setProperty('--ctp-scaled-height', `${scaledHeight}px`)
+
+    // Apply optional overrides from props
+    if (pageStyle && Object.keys(pageStyle).length > 0) {
+      Object.assign(pageEl.style, pageStyle)
+    }
+  }, [
+    containerBackground,
+    effectiveScale,
+    layout.page.width,
+    layout.page.height,
+    layout.margins.left,
+    layout.margins.right,
+    pageStyle,
+    showShadow,
+    unscaledHeight,
+  ])
+
+  // Compute fit-to-width scale when container is narrower than the page.
+  useEffect(() => {
+    if (!responsive) return
+    const viewportEl = viewportRef.current
+    if (!viewportEl) return
+
+    const update = () => {
+      const available = viewportEl.clientWidth
+      if (!available || !Number.isFinite(available)) return
+      const next = Math.min(1, available / layout.page.width)
+      setFitScale(Math.max(minScale, next))
+    }
+
+    update()
+    const ro = new ResizeObserver(() => update())
+    ro.observe(viewportEl)
+    return () => ro.disconnect()
+  }, [responsive, layout.page.width, minScale])
+
+  // Measure unscaled height so we can size the outer wrapper to the scaled height.
+  useEffect(() => {
+    const pageEl = pageRef.current
+    if (!pageEl) return
+
+    const update = () => {
+      // offsetHeight is unaffected by CSS transforms (we want the unscaled value)
+      const h = pageEl.offsetHeight
+      setUnscaledHeight(h)
+    }
+
+    update()
+    const ro = new ResizeObserver(() => update())
+    ro.observe(pageEl)
+    return () => ro.disconnect()
+  }, [layout.page.width, layout.margins.left, layout.margins.right])
 
   // Page visuals:
   // - Full page width with white background
   // - Horizontal padding (left/right margins) for content area
   // - Vertical margins (top/bottom) are rendered by the pagination widgets
-  const pageStyles: CSSProperties = {
-    width: layout.page.width * scale,
-    boxSizing: 'border-box',
-    backgroundColor: 'white',
-    boxShadow: showShadow ? '0 10px 10px rgba(0, 0, 0, 0.12)' : 'none',
-    // border: '1px solid #e5e5e5',
-    // Only horizontal padding (left/right margins)
-    // Top/bottom margins are handled by pagination header/footer decorations
-    paddingRight: layout.margins.right * scale,
-    paddingLeft: layout.margins.left * scale,
-    position: 'relative',
-    transformOrigin: 'top center',
-    overflow: 'visible',
-    ...pageStyle,
-  }
-
   return (
     <div
+      ref={containerRef}
       className={`page-wrapper-container ${containerClassName}`}
-      style={containerStyles}
+      data-testid={testId}
     >
-      <div
-        className={`page-wrapper-page ${pageClassName}`}
-        style={pageStyles}
-        data-page-format={typeof format === 'string' ? format : 'custom'}
-        data-page-orientation={orientation}
-        data-page-width={layout.page.width}
-        data-page-height={layout.page.height}
-        data-content-height={layout.content.height}
-      >
-        {children}
+      <div ref={viewportRef} className="page-wrapper-viewport">
+        <div ref={scaledOuterRef} className="page-wrapper-scaled-outer">
+          <div
+            ref={pageRef}
+            className={`page-wrapper-page ${pageClassName}`}
+            data-page-format={typeof format === 'string' ? format : 'custom'}
+            data-page-orientation={orientation}
+            data-page-width={layout.page.width}
+            data-page-height={layout.page.height}
+            data-content-height={layout.content.height}
+          >
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   )

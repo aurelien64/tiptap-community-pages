@@ -5,6 +5,54 @@
 
 :root {
   --ctp-page-bg: #f3f4f6;
+  /* Back-compat with demo/extension internals */
+  --page-bg: var(--ctp-page-bg);
+  --ctp-page-shadow: 0 6px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* PageWrapper defaults (framework-agnostic) */
+.page-wrapper-container {
+  background-color: var(--page-bg, var(--ctp-page-bg));
+  padding: 40px 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .page-wrapper-container {
+    padding: 16px 8px;
+  }
+}
+
+.page-wrapper-viewport {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.page-wrapper-scaled-outer {
+  position: relative;
+  width: var(--ctp-scaled-width, auto);
+  height: var(--ctp-scaled-height, auto);
+}
+
+.page-wrapper-page {
+  background: white;
+  box-shadow: var(--ctp-page-shadow, 0 6px 10px rgba(0, 0, 0, 0.12));
+  box-sizing: border-box;
+  width: var(--ctp-page-width, auto);
+  padding-left: var(--ctp-margin-left, 0px);
+  padding-right: var(--ctp-margin-right, 0px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  transform: scale(var(--ctp-page-scale, 1));
+  overflow: visible;
 }
 
 /* Placeholder styling used by the demo (optional, safe to include) */

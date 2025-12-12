@@ -28,9 +28,10 @@ yarn-error.log*
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 
 # IDE.docs/
-.github/
 .idea/
 .playwright-mcp/
 .vscode/

@@ -138,8 +138,8 @@ export function PagedEditor({
   // SSR safety
   if (!mounted) {
     return (
-      <div className="page-wrapper-container" style={{ backgroundColor: '#f3f4f6', minHeight: '100vh' }}>
-        <div className="animate-pulse bg-white shadow-md" style={{ width: 816, height: 1056, margin: '40px auto' }} />
+      <div className="page-wrapper-container">
+        <div className="animate-pulse bg-white shadow-md w-[816px] h-[1056px] my-10" />
       </div>
     )
   }

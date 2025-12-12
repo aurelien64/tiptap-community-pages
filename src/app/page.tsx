@@ -224,6 +224,7 @@ export default function HomePage() {
         format={format}
         orientation={orientation}
         containerClassName="flex-1"
+        testId="paged-editor"
       >
         <EditorContent editor={editor} />
       </PageWrapper>

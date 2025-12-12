@@ -193,6 +193,11 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       const layout = getPageLayoutDimensions(config)
       const pageGap = options.pageGap
 
+      // If the page wrapper is visually scaled (mobile fit), ProseMirror DOM
+      // measurements via getBoundingClientRect() will be scaled too.
+      // Convert those visual measurements back into unscaled layout units.
+      const scale = getPageScale(view.dom as HTMLElement)
+
       // Content area height (page height minus top/bottom margins)
       const contentHeight = layout.content.height
       const editorDom = view.dom
@@ -201,7 +206,7 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       // We do this by adding a computed filler `margin-bottom` on the hard break node.
       // The page count calculation below uses a fixed-point iteration so the overlay
       // contribution stays consistent and does not explode.
-      const minPageCountFromHardBreaks = applyHardPageBreakSpacing(editorDom, layout, pageGap)
+      const minPageCountFromHardBreaks = applyHardPageBreakSpacing(editorDom, layout, pageGap, scale)
       
       // Calculate content height by measuring visual span from first to last content element
       // This properly accounts for CSS margins between elements
@@ -222,8 +227,8 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
         const firstContent = contentChildren[0]
         const lastContent = contentChildren[contentChildren.length - 1]
         
-        const firstTop = firstContent.getBoundingClientRect().top - editorRect.top
-        const lastBottom = lastContent.getBoundingClientRect().bottom - editorRect.top
+        const firstTop = (firstContent.getBoundingClientRect().top - editorRect.top) / scale
+        const lastBottom = (lastContent.getBoundingClientRect().bottom - editorRect.top) / scale
         
         // Visual span from first content to last content
         const visualSpan = Math.max(0, Math.round(lastBottom - firstTop))
@@ -398,6 +403,16 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
   },
 })
 
+function getPageScale(editorDom: HTMLElement): number {
+  const wrapper = editorDom.closest<HTMLElement>('.page-wrapper-page')
+  if (!wrapper) return 1
+
+  const raw = getComputedStyle(wrapper).getPropertyValue('--ctp-page-scale').trim()
+  const value = parseFloat(raw)
+  if (!Number.isFinite(value) || value <= 0) return 1
+  return value
+}
+
 /**
  * Hard/manual page breaks (screen)
  *
@@ -414,7 +429,8 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
 function applyHardPageBreakSpacing(
   editorDom: HTMLElement,
   layout: PageLayoutDimensions,
-  pageGap: number
+  pageGap: number,
+  scale: number
 ) {
   const breaks = Array.from(
     editorDom.querySelectorAll<HTMLElement>('[data-page-break], [data-page-break="true"]')
@@ -447,7 +463,7 @@ function applyHardPageBreakSpacing(
   for (let i = 0; i < breaks.length; i++) {
     const el = breaks[i]
 
-    const visualY = (el.getBoundingClientRect().top - editorRect.top) + cumulativeDeltaShift
+    const visualY = ((el.getBoundingClientRect().top - editorRect.top) / scale) + cumulativeDeltaShift
     const yFromFirstContentTop = Math.max(0, visualY - layout.margins.top)
 
     const visualPageIndex = stride > 0 ? Math.floor(yFromFirstContentTop / stride) : 0
