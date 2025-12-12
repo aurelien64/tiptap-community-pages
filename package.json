@@ -106,5 +106,13 @@
     "legal",
     "editor"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aurelien64/tiptap-community-pages.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aurelien64/tiptap-community-pages/issues"
+  },
+  "homepage": "https://github.com/aurelien64/tiptap-community-pages#readme",
   "license": "MIT"
 }
