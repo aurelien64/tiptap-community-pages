@@ -355,6 +355,56 @@ describe('Pagination Extension', () => {
       expect(editor.storage.pagination.pageCount).toBeGreaterThanOrEqual(3)
     })
   })
+
+  describe('Overlay Horizontal Alignment', () => {
+    it('should derive overlay offset from host container padding', () => {
+      const originalRaf = globalThis.requestAnimationFrame
+      const originalCaf = globalThis.cancelAnimationFrame
+
+      // Make pagination updates run synchronously in this test.
+      globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
+        cb(0)
+        return 0 as unknown as number
+      }
+      globalThis.cancelAnimationFrame = () => {}
+
+      try {
+        const container = document.createElement('div')
+        container.style.width = '816px'
+        // Simulate a host page that pads content by 96px,
+        // but the editor is configured with different margins.
+        container.style.paddingLeft = '96px'
+        container.style.paddingRight = '96px'
+        document.body.appendChild(container)
+
+        const editor2 = new Editor({
+          element: container,
+          extensions: [
+            StarterKit,
+            PageBreak,
+            Pagination.configure({
+              pageFormat: 'Letter',
+              orientation: 'portrait',
+              margins: { left: 80, right: 80 },
+              pageGap: 40,
+            }),
+          ],
+          content: '<p>Test content</p>',
+        })
+
+        const left = (editor2.view.dom as HTMLElement).style.getPropertyValue('--ctp-overlay-offset-left')
+        const right = (editor2.view.dom as HTMLElement).style.getPropertyValue('--ctp-overlay-offset-right')
+
+        expect(left).toBe('96px')
+        expect(right).toBe('96px')
+
+        editor2.destroy()
+      } finally {
+        globalThis.requestAnimationFrame = originalRaf
+        globalThis.cancelAnimationFrame = originalCaf
+      }
+    })
+  })
 })
 
 describe('Pagination Options', () => {

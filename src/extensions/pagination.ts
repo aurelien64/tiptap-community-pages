@@ -193,6 +193,10 @@ export const Pagination = Extension.create<PaginationOptions, PaginationStorage>
       const layout = getPageLayoutDimensions(config)
       const pageGap = options.pageGap
 
+      // Sync overlay horizontal alignment to actual DOM padding.
+      // Host apps may apply different left/right padding than `config.margins`.
+      syncOverlayHorizontalInsets(view, layout)
+
       // If the page wrapper is visually scaled (mobile fit), ProseMirror DOM
       // measurements via getBoundingClientRect() will be scaled too.
       // Convert those visual measurements back into unscaled layout units.
@@ -413,6 +417,57 @@ function getPageScale(editorDom: HTMLElement): number {
   return value
 }
 
+function parsePx(value: string | null | undefined): number | null {
+  if (!value) return null
+  const n = parseFloat(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function computeOverlayInsets(editorDom: HTMLElement, fallback: PageMargins): { left: number; right: number } {
+  const candidates: Array<HTMLElement | null> = [
+    editorDom.closest<HTMLElement>('.page-wrapper-page'),
+    editorDom.parentElement as HTMLElement | null,
+    editorDom,
+  ]
+
+  for (const el of candidates) {
+    if (!el) continue
+    const cs = getComputedStyle(el)
+    const pl = parsePx(cs.paddingLeft)
+    const pr = parsePx(cs.paddingRight)
+    if ((pl ?? 0) > 0 || (pr ?? 0) > 0) {
+      return {
+        left: Math.max(0, Math.round(pl ?? 0)),
+        right: Math.max(0, Math.round(pr ?? 0)),
+      }
+    }
+
+    // As a fallback, try reading our documented CSS vars if present.
+    const varLeft = parsePx(cs.getPropertyValue('--ctp-margin-left'))
+    const varRight = parsePx(cs.getPropertyValue('--ctp-margin-right'))
+    if ((varLeft ?? 0) > 0 || (varRight ?? 0) > 0) {
+      return {
+        left: Math.max(0, Math.round(varLeft ?? 0)),
+        right: Math.max(0, Math.round(varRight ?? 0)),
+      }
+    }
+  }
+
+  return {
+    left: Math.max(0, Math.round(fallback.left)),
+    right: Math.max(0, Math.round(fallback.right)),
+  }
+}
+
+function syncOverlayHorizontalInsets(view: EditorView, layout: PageLayoutDimensions) {
+  const editorDom = view.dom as HTMLElement
+  const { left, right } = computeOverlayInsets(editorDom, layout.margins)
+
+  // Set on the editor root so all overlay widgets (descendants) can reference it.
+  editorDom.style.setProperty('--ctp-overlay-offset-left', `${left}px`)
+  editorDom.style.setProperty('--ctp-overlay-offset-right', `${right}px`)
+}
+
 /**
  * Hard/manual page breaks (screen)
  *
@@ -564,12 +619,12 @@ function createPaginationContainer(
     
     // The .breaker div - contains footer, gap, header
     // Uses negative margin-left to extend to full page width (counteract padding)
-    breaksHtml += '<div class="' + BREAKER_CONTAINER_CLASS + '" style="width:calc(' + page.width + 'px);margin-left:-' + margins.left + 'px;position:relative;float:left;clear:both;left:0;right:0;z-index:2;box-sizing:border-box;">'
+    breaksHtml += '<div class="' + BREAKER_CONTAINER_CLASS + '" style="width:calc(' + page.width + 'px);margin-left:calc(-1 * var(--ctp-overlay-offset-left, ' + margins.left + 'px));position:relative;float:left;clear:both;left:0;right:0;z-index:2;box-sizing:border-box;">'
     
     // Footer
     // Draw the bottom separator line here so it stays within page width,
     // even if the gap extends wider to mask side shadows.
-    breaksHtml += '<div class="' + PAGE_FOOTER_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 -1px 0 #e5e7eb;box-sizing:border-box;">'
+    breaksHtml += '<div class="' + PAGE_FOOTER_CLASS + '" style="height:' + margins.bottom + 'px;padding-left:var(--ctp-overlay-offset-left, ' + margins.left + 'px);padding-right:var(--ctp-overlay-offset-right, ' + margins.right + 'px);background:white;box-shadow:inset 0 -1px 0 #e5e7eb;box-sizing:border-box;">'
     breaksHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;height:100%;">'
     breaksHtml += '<div style="text-align:left;"></div>'
     breaksHtml += '<div style="text-align:center;"></div>'
@@ -584,7 +639,7 @@ function createPaginationContainer(
     
     // Header
     // Draw the top separator line here so it stays within page width.
-    breaksHtml += '<div class="' + PAGE_HEADER_CLASS + '" style="height:' + margins.top + 'px;padding:0 ' + margins.left + 'px;background:white;box-shadow:inset 0 1px 0 #e5e7eb;box-sizing:border-box;">'
+    breaksHtml += '<div class="' + PAGE_HEADER_CLASS + '" style="height:' + margins.top + 'px;padding-left:var(--ctp-overlay-offset-left, ' + margins.left + 'px);padding-right:var(--ctp-overlay-offset-right, ' + margins.right + 'px);background:white;box-shadow:inset 0 1px 0 #e5e7eb;box-sizing:border-box;">'
     breaksHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;height:100%;">'
     breaksHtml += '<div style="text-align:left;"></div>'
     breaksHtml += '<div style="text-align:center;"></div>'
@@ -606,7 +661,7 @@ function createFirstPageHeader(layout: PageLayoutDimensions): HTMLElement {
   const wrapper = document.createElement('div')
   wrapper.className = FIRST_PAGE_HEADER_CLASS
   wrapper.setAttribute('contenteditable', 'false')
-  wrapper.style.cssText = 'position:relative;height:' + margins.top + 'px;margin-left:-' + margins.left + 'px;margin-right:-' + margins.right + 'px;width:' + page.width + 'px;display:flex;align-items:center;pointer-events:none;user-select:none;background:white;box-sizing:border-box;padding:0 ' + margins.left + 'px;'
+  wrapper.style.cssText = 'position:relative;height:' + margins.top + 'px;margin-left:calc(-1 * var(--ctp-overlay-offset-left, ' + margins.left + 'px));margin-right:calc(-1 * var(--ctp-overlay-offset-right, ' + margins.right + 'px));width:' + page.width + 'px;display:flex;align-items:center;pointer-events:none;user-select:none;background:white;box-sizing:border-box;padding-left:var(--ctp-overlay-offset-left, ' + margins.left + 'px);padding-right:var(--ctp-overlay-offset-right, ' + margins.right + 'px);'
   
   wrapper.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;"><div style="text-align:left;"></div><div style="text-align:center;"></div><div style="text-align:right;"></div></div>'
   
@@ -640,7 +695,7 @@ function createLastPageFooter(
   const wrapper = document.createElement('div')
   wrapper.className = LAST_PAGE_FOOTER_CLASS
   wrapper.setAttribute('contenteditable', 'false')
-  wrapper.style.cssText = 'position:relative;margin-left:-' + margins.left + 'px;margin-right:-' + margins.right + 'px;width:' + page.width + 'px;pointer-events:none;user-select:none;background:white;box-sizing:border-box;'
+  wrapper.style.cssText = 'position:relative;margin-left:calc(-1 * var(--ctp-overlay-offset-left, ' + margins.left + 'px));margin-right:calc(-1 * var(--ctp-overlay-offset-right, ' + margins.right + 'px));width:' + page.width + 'px;pointer-events:none;user-select:none;background:white;box-sizing:border-box;'
   
   const pageNumberText = displayOptions.formatPageNumber
     ? displayOptions.formatPageNumber(totalPages, totalPages, displayOptions.separator)
@@ -655,7 +710,7 @@ function createLastPageFooter(
   }
   
   // Footer with page number
-  html += '<div class="' + LAST_PAGE_FOOTER_CONTENT_CLASS + '" style="height:' + margins.bottom + 'px;padding:0 ' + margins.left + 'px;display:flex;align-items:center;box-sizing:border-box;">'
+  html += '<div class="' + LAST_PAGE_FOOTER_CONTENT_CLASS + '" style="height:' + margins.bottom + 'px;padding-left:var(--ctp-overlay-offset-left, ' + margins.left + 'px);padding-right:var(--ctp-overlay-offset-right, ' + margins.right + 'px);display:flex;align-items:center;box-sizing:border-box;">'
   html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;width:100%;">'
   html += '<div style="text-align:left;"></div>'
   html += '<div style="text-align:center;"></div>'
